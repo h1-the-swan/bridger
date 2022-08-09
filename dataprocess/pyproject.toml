@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "bridger_dataprocess"
+version = "0.1.0"
+description = "Data processing for Bridger"
+authors = ["Jason Portenoy"]
+license = "MIT"
+packages = [
+	{ include = "bridger_dataprocess", from = "src" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+humanfriendly = "^10.0"
+requests = "^2.28.1"
+python-dotenv = "^0.20.0"
+pandas = "^1.4.3"
+spacy = "^3.4.1"
+tqdm = "^4.64.0"
+
+[tool.poetry.dev-dependencies]
+jupyter = "^1.0.0"
+poetry = "^1.1.14"
+black = "^22.6.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
