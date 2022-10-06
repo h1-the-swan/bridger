@@ -1,0 +1,10 @@
+venv
+.venv
+*.pyc
+*.egg-info/
+__pycache__
+logs
+notebooks
+*.env
+
+.venvbackup

@@ -16,3 +16,10 @@ logs
 notebooks/
 
 *.slurm
+
+# ignore beaker directory for now
+beaker/
+
+poetry.lock.bak
+pyproject.toml.bak
+scratch.txt

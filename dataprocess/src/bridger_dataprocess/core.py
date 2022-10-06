@@ -24,10 +24,7 @@ def format_doc(
     text: str,
     nlp: spacy.Language,
     expand_abbreviations: bool = False,
-) -> TypedDict(
-    "doc_dygie_format",
-    {"doc_key": Union[int, str], "sentences": List[str], "dataset": str},
-):
+) -> Dict:
     spacy_doc = nlp(text)
     sentences = []
     # need to have blank data for "ner" and "relations"
@@ -50,4 +47,3 @@ def format_doc(
         "ner": ners,
         "relations": relations,
     }
-
