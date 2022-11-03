@@ -46,7 +46,7 @@ def get_filepaths_from_dataset(beaker, dataset_id: str) -> List[str]:
 
 def filter_dataset_files(fnames: List[str], filetype: str) -> List[str]:
     if filetype in ["log", ".log"]:
-        return [fname.endswith(".log") for fname in fnames]
+        return [fname for fname in fnames if fname.endswith(".log")]
     elif filetype in ["results"]:
         return [
             fname

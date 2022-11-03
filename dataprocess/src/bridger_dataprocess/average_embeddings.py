@@ -17,8 +17,10 @@ import numpy as np
 
 # from sklearn.preprocessing import MinMaxScaler
 from scipy.sparse import csr_matrix, save_npz
+from sklearn.metrics.pairwise import cosine_distances
 
 from .core import get_score_column, map_label_to_idx
+
 # from .data_helper import DataHelper
 from .matrix import SciSightMatrix
 
@@ -107,9 +109,7 @@ def get_author_term_matrix(
         ]
 
     # TODO
-    ssmat_paper_term = get_paper_term_matrix(
-        df_paper_term_embeddings, label, terms
-    )
+    ssmat_paper_term = get_paper_term_matrix(df_paper_term_embeddings, label, terms)
 
     papers = ssmat_paper_term.row_labels
     paa = paa.loc[paa["PaperId"].isin(papers)]
@@ -143,3 +143,72 @@ def get_author_term_matrix(
     )
 
     return ssmat_author_term
+
+
+def get_df_dists(
+    author_id: Union[str, int],
+    ssmat_author_term_task: SciSightMatrix,
+    avg_embeddings_task: pd.Series,
+    ssmat_author_term_method: SciSightMatrix,
+    avg_embeddings_method: pd.Series,
+    avg_embeddings_specter: Optional[pd.Series] = None,
+    # get_paper_count=False,
+) -> pd.DataFrame:
+    # get a dataframe with Task and Method distances for a single focal author
+    author_idx = ssmat_author_term_task.row_label_to_row_idx[str(author_id)]
+    focal_embedding = avg_embeddings_task.loc[author_idx]
+    arr = np.array(avg_embeddings_task.tolist())
+    cdist_task = cosine_distances(focal_embedding.reshape(1, -1), arr)
+    df_cdist_task = pd.DataFrame(
+        {"cosine_distance_task": cdist_task[0], "author_idx": range(len(cdist_task[0]))}
+    ).sort_values("cosine_distance_task")
+    df_cdist_task["AuthorId"] = (
+        df_cdist_task["author_idx"]
+        .map(lambda x: ssmat_author_term_task.row_labels[x])
+        .astype(int)
+    )
+
+    author_idx = ssmat_author_term_method.row_label_to_row_idx[str(author_id)]
+    focal_embedding = avg_embeddings_method.loc[author_idx]
+    arr = np.array(avg_embeddings_method.tolist())
+    cdist_method = cosine_distances(focal_embedding.reshape(1, -1), arr)
+    df_cdist_method = pd.DataFrame(
+        {
+            "cosine_distance_method": cdist_method[0],
+            "author_idx": range(len(cdist_method[0])),
+        }
+    ).sort_values("cosine_distance_method")
+    df_cdist_method["AuthorId"] = (
+        df_cdist_method["author_idx"]
+        .map(lambda x: ssmat_author_term_method.row_labels[x])
+        .astype(int)
+    )
+
+    # df_dists = pd.DataFrame(index=gb.index.tolist())
+    df_dists = pd.DataFrame()
+    df_dists["task_dist"] = df_cdist_task.set_index("AuthorId")["cosine_distance_task"]
+    df_dists["method_dist"] = df_cdist_method.set_index("AuthorId")[
+        "cosine_distance_method"
+    ]
+    if avg_embeddings_specter is not None:
+        arr = np.vstack(avg_embeddings_specter.values)
+        focal_embedding = avg_embeddings_specter.loc[int(author_id)]
+        cdist_specter = cosine_distances(focal_embedding.reshape(1, -1), arr)
+        df_cdist_specter = pd.DataFrame(
+            cdist_specter[0],
+            index=avg_embeddings_specter.index,
+            columns=["cosine_distance_specter"],
+        )
+
+        df_dists["specter_dist"] = df_cdist_specter["cosine_distance_specter"]
+
+    # if get_paper_count is True:
+    #     df_dists["paper_count"] = (
+    #         df_paper_authors[["AuthorId", "PaperId"]]
+    #         .dropna()
+    #         .drop_duplicates()
+    #         .groupby("AuthorId")
+    #         .size()
+    #     )
+
+    return df_dists.drop(author_id)

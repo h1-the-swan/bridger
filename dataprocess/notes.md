@@ -33,3 +33,23 @@ need to refactor:
 - `SciSightMatrix.from_df()`?
 
 Also will need to alter `pipeline110-get_average_dygie_embeddings.py` and `pipeline111-get_average_specter_embeddings.py`
+
+
+## Data pipeline after NER extraction --- 2022-10-19
+
+Parse NER predictions: one experiment per results dataset --- `submit_new_parse_beaker_experiments.ipynb`
+
+Download all parse files and combine them into one parquet file --- `download_parse_files.ipynb`
+
+Upload this parquet file --- `beaker dataset create --name terms_from_papers.parquet ./terms_from_papers.parquet`
+
+Normalize --- `beaker experiment create beaker/normalize-ner-beaker-conf.yaml`
+
+Get term embeddings --- `beaker experiment create beaker/get-sentence-transformer-embeddings-beaker-conf.yaml` (make sure to point toward the right dataset)
+
+Combine embeddings --- `beaker experiment create beaker/combine-term-embeddings-beaker.conf.yaml` (make sure to point toward the right dataset)
+
+Final processing for terms --- `beaker experiment create beaker/final-processing-terms-beaker-conf.yaml` (make sure to point toward the right dataset)
+
+Final processing for embeddings --- `beaker experiment create beaker/final-processing-embeddings-beaker-conf.yaml` (make sure to point toward the right dataset)
+

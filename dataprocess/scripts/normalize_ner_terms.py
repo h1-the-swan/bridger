@@ -4,6 +4,7 @@ DESCRIPTION = (
     """Use spacy to lemmatize and normalize dygie terms (tasks, methods, etc.)"""
 )
 
+from multiprocessing import cpu_count
 import sys, os, time, re
 from pathlib import Path
 from datetime import datetime
@@ -302,7 +303,10 @@ def main(args):
     # terms = df_terms['term_cleaned'].values
     logger.debug("there are {} unique terms".format(len(terms)))
     logger.debug("lemmatizing and normalizing...")
-    docs = list(nlp.pipe(terms, n_process=args.processes))
+    n_process = args.processes
+    if n_process is None:
+        n_process = cpu_count()
+    docs = list(nlp.pipe(terms, n_process=n_process))
     logger.debug("done. {} spacy docs".format(len(docs)))
     normterms = [_normalize_term(doc) for doc in docs]
     logger.debug("{} normalized terms".format(len(normterms)))
@@ -350,7 +354,7 @@ if __name__ == "__main__":
         help="spacy model to use. default is `en_core_sci_sm` from `scispacy`",
     )
     parser.add_argument(
-        "--processes", type=int, default=30, help="number of processes for spacy to use"
+        "--processes", type=int, help="number of processes for spacy to use (default: number of cpus)"
     )
     parser.add_argument("--debug", action="store_true", help="output debugging info")
     global args
