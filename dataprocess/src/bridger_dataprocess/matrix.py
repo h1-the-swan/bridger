@@ -164,6 +164,25 @@ class SciSightMatrix:
         logger.debug("loading matrix")
         self.load_matrix(row_data, col_data, nrows, ncols, vals)
 
+    def to_df(
+        self,
+        colname_for_rowdata: str,
+        colname_for_coldata: str,
+        colname_for_vals: str = "weight",
+    ):
+        mat = self.mat
+        row_idx, col_idx = mat.nonzero()
+        df = pd.DataFrame(
+            {
+                "row_idx": row_idx,
+                "col_idx": col_idx,
+                colname_for_vals: mat.data,
+            }
+        )
+        df[colname_for_rowdata] = df["row_idx"].map(lambda x: self.row_labels[x])
+        df[colname_for_coldata] = df["col_idx"].map(lambda x: self.col_labels[x])
+        return df
+
 
 def main(args):
     pass

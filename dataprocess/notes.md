@@ -53,3 +53,43 @@ Final processing for terms --- `beaker experiment create beaker/final-processing
 
 Final processing for embeddings --- `beaker experiment create beaker/final-processing-embeddings-beaker-conf.yaml` (make sure to point toward the right dataset)
 
+
+## Datasets --- 2022-12-12
+
+### `all_recs_20221107.pickle`
+
+This file is used to get the author recommendations for the Bridger demo once a focal author has been selected.
+
+top level is a dictionary mapping `author_id` to a dictionary of:
+label -> list of `author_ids`
+Where label is one of:
+
+```ts
+// from Home.tsx in bridger-demo
+const labelInfo: { [key: string]: string } = {
+    simMethod: 'Authors who use similar methods',
+    simTask: 'Authors who work on similar tasks',
+    simMethod_distTask: 'Authors who use similar methods, but work on less similar tasks',
+    simTask_distMethod: 'Authors who work on similar tasks, but use less similar methods',
+    simspecter: 'Authors with similar papers (non-Bridger recommendations)',
+};
+```
+
+TODO: For the author-term matrix: see https://beaker.org/ds/01GGQP03EW50SQETRF3ZSHPWA0/details (result of `scripts/get_author_avg_embeddings.py`)
+Will have to use the sparse matrix to get top terms per author.
+Planned this out in `matrices_author_paper_term.ipynb`
+used that notebook to create:
+`author_avg_embeddings/avg_embeddings/author_top_terms_method.pickle`
+and
+`author_avg_embeddings/avg_embeddings/author_top_terms_task.pickle`
+which have the top terms for all authors. But we may have to recreate the `TextRanker.get_dygie_terms_trunc` method from collabnetworks to get rid of very similar terms in the list
+
+Paper to term data is in `final-processing-terms/terms_to_s2_id_scoreThreshold0.90.parquet`
+
+
+TODOs 2023-02-20:
+- I changed `get_author_avg_embeddings.py` to exclude papers before `min-year`, so need to rerun that for 2012 and 2017.
+- I added `get_avg_specter` to `average_embeddings.py`. Need to write a script to run that for a given `min-year`, and run it for 2012 and 2017. See `Untitled10.ipynb`.
+- Modify `dataprocess/beaker/submit_beaker_experiments_get_dists.py` and use it to get distances for all authors (for min-year 2012 and 2017).
+- Combine distance data to get author recs. See `beaker_experiments_after_get_recs_run00.ipynb`.
+- At some point in the above steps, or after them (try to figure out the best time to do it), get top terms (tasks and methods) for authors. see `matrices_author_paper_term.ipynb`.

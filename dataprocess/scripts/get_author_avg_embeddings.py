@@ -93,14 +93,16 @@ def main(args):
     ]
     logger.debug(f"after filtering: df_paper_authors.shape=={df_paper_authors.shape}")
 
+    logger.debug(f"discarding all papers published before {args.min_year}")
+    df_paper_authors = df_paper_authors[df_paper_authors.pubYear >= args.min_year]
+    logger.debug(
+        f"after filtering by year: df_paper_authors.shape=={df_paper_authors.shape}"
+    )
+
     logger.debug(
         f"keeping only authors with at least {args.min_papers} since year {args.min_year}"
     )
-    gb = (
-        df_paper_authors[df_paper_authors.pubYear >= args.min_year]
-        .groupby("AuthorId")
-        .size()
-    )
+    gb = df_paper_authors.groupby("AuthorId").size()
     gb = gb[gb >= args.min_papers]
     df_paper_authors = df_paper_authors[df_paper_authors.AuthorId.isin(gb.index)]
     logger.debug(
@@ -183,7 +185,7 @@ if __name__ == "__main__":
         "--min-year",
         type=int,
         default=2017,
-        help="authors with fewer than <min_papers> since <min_year> will be excluded (default: 5 papers since 2017)",
+        help="exclude all papers before this year",
     )
     parser.add_argument("--debug", action="store_true", help="output debugging info")
     global args

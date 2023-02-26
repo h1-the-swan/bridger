@@ -145,6 +145,18 @@ def get_author_term_matrix(
     return ssmat_author_term
 
 
+def get_avg_specter(
+    df_paper_authors, specter_embeddings, weighted: bool = True
+) -> pd.Series:
+    aembs = df_paper_authors["s2_idx"].apply(lambda x: specter_embeddings[x])
+    if weighted is True:
+        aembs = aembs * df_paper_authors["score"]
+    df_paper_authors["embs"] = aembs
+    gb = df_paper_authors.groupby("AuthorId")
+    avg_specter = gb["embs"].apply(lambda x: np.mean(x, axis=0))
+    return avg_specter
+
+
 def get_df_dists(
     author_id: Union[str, int],
     ssmat_author_term_task: SciSightMatrix,
