@@ -75,7 +75,7 @@ python-versions = "*"
 
 [[package]]
 name = "beaker-py"
-version = "1.11.3"
+version = "1.17.7"
 description = ""
 category = "dev"
 optional = false
@@ -87,10 +87,10 @@ packaging = "*"
 pydantic = ">=1.8.2,<2.0"
 PyYAML = "*"
 requests = "*"
-rich = ">=12.3,<13.0"
+rich = ">=12.3,<14.0"
 
 [package.extras]
-dev = ["Sphinx (==5.0.1)", "black (==22.6.0)", "codecov", "coverage", "flake8", "furo (==2022.6.4.1)", "isort (==5.10.1)", "mypy (==0.961)", "myst-parser (==0.18.0)", "packaging", "petname (==2.6)", "pytest", "pytest-cov", "setuptools", "sphinx-autobuild (==2021.3.14)", "sphinx-autodoc-typehints", "sphinx-copybutton (==0.5.0)", "sphinx-inline-tabs", "twine (>=1.11.0)", "types-cachetools", "types-pyyaml", "types-requests", "wheel"]
+dev = ["Sphinx (==5.0.1)", "black (>=23.1,<24.0)", "codecov", "coverage", "flake8", "flaky", "furo (==2022.12.7)", "isort (==5.12.0)", "mypy (>=1.0,<1.1)", "myst-parser (==0.18.1)", "packaging", "petname (==2.6)", "pytest", "pytest-cov", "setuptools", "sphinx-autobuild (==2021.3.14)", "sphinx-autodoc-typehints (==1.19.1)", "sphinx-copybutton (==0.5.0)", "sphinx-inline-tabs", "twine (>=1.11.0)", "types-cachetools", "types-pyyaml", "types-requests", "wheel"]
 
 [[package]]
 name = "beautifulsoup4"
@@ -2212,8 +2212,8 @@ backcall = [
     {file = "backcall-0.2.0.tar.gz", hash = "sha256:5cbdbf27be5e7cfadb448baf0aa95508f91f2bbc6c6437cd9cd06e2a4c215e1e"},
 ]
 beaker-py = [
-    {file = "beaker-py-1.11.3.tar.gz", hash = "sha256:d6161aa78d0e1e2c0089880d5e2050ca38e1b7e9d1d4226756cff4d7d55b2f41"},
-    {file = "beaker_py-1.11.3-py3-none-any.whl", hash = "sha256:e915d9b49b7a4bc12b70e6d340ddbd6c8a13383c5c352a6157eff7bbcd41aa5f"},
+    {file = "beaker-py-1.17.7.tar.gz", hash = "sha256:7edf078826ad5f9e964d64ee76b7b96dd1ceeaced35d657a42d1e3fd34ac130e"},
+    {file = "beaker_py-1.17.7-py3-none-any.whl", hash = "sha256:87c8d23ea2eb27ff3f067cc6ed541245cfb1ebea92049f148670cb8d06c4d1a1"},
 ]
 beautifulsoup4 = [
     {file = "beautifulsoup4-4.11.1-py3-none-any.whl", hash = "sha256:58d5c3d29f5a36ffeb94f02f0d786cd53014cf9b3b3951d42e0080d8a9498d30"},

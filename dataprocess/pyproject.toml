@@ -21,7 +21,7 @@ sentence-transformers = "^2.2.2"
 [tool.poetry.dev-dependencies]
 jupyter = "^1.0.0"
 black = "^22.6.0"
-beaker-py = "^1.6.9"
+beaker-py = "^1.17.7"
 SQLAlchemy = "^1.4.41"
 psycopg2-binary = "^2.9.3"
 sqlalchemy-redshift = "^0.8.11"
