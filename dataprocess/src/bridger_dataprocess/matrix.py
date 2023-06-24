@@ -2,7 +2,7 @@
 
 DESCRIPTION = """store data as sparse matrices"""
 
-import sys, os, time
+import sys, os, time, pickle
 from typing import Optional, Union, List, Dict
 from pathlib import Path
 from datetime import datetime
@@ -46,6 +46,16 @@ class SciSightMatrix:
         self.col_labels = col_labels
         self.col_label_to_col_idx = None
         self.description = description
+
+    @classmethod
+    def _from_dict(cls, d):
+        return cls.from_matrix(**d)
+
+    @classmethod
+    def read_pickle(cls, path_to_pickle_file: Union[str, Path]):
+        fp = Path(path_to_pickle_file)
+        d = pickle.loads(fp.read_bytes())
+        return cls._from_dict(d)
 
     @classmethod
     def from_df(
@@ -182,6 +192,20 @@ class SciSightMatrix:
         df[colname_for_rowdata] = df["row_idx"].map(lambda x: self.row_labels[x])
         df[colname_for_coldata] = df["col_idx"].map(lambda x: self.col_labels[x])
         return df
+
+    def _to_dict(self):
+        return {
+            'mat': self.mat,
+            'row_labels': self.row_labels,
+            'row_label_to_row_idx': self.row_label_to_row_idx,
+            'col_labels': self.col_labels,
+            'col_label_to_col_idx': self.col_label_to_col_idx,
+            'description': self.description,
+        }
+    
+    def to_pickle(self) -> bytes:
+        d = self._to_dict()
+        return pickle.dumps(d, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def main(args):

@@ -6,7 +6,7 @@ import sys, os, time
 from pathlib import Path
 from datetime import datetime
 from timeit import default_timer as timer
-from typing import Iterable
+from typing import Iterable, Union, Optional
 
 try:
     from humanfriendly import format_timespan
@@ -30,7 +30,7 @@ torch.multiprocessing.set_sharing_strategy("file_system")
 
 
 def process_parquet_input(fname, colname="term_cleaned"):
-    logger.debug("loading input data from parquet file: {}".format(args.input))
+    logger.debug("loading input data from parquet file: {}".format(fname))
     df = pd.read_parquet(fname)
     logger.debug("dataframe shape: {}".format(df.shape))
     labels = ["Method", "Task", "Material", "Metric"]
@@ -56,18 +56,19 @@ def drop_terms(
     return df[~df[colname].isin(terms_to_drop)]
 
 
-def main(args):
-    outdir = Path(args.outdir)
+def run_get_sentence_transformer_embeddings(input_file: Union[str, Path], output_dir: Union[str, Path], model: str = "sentence-transformers/all-mpnet-base-v2", existing: Optional[Iterable[str]] = None, chunksize: int = 1000000):
+    outdir = Path(output_dir)
     if not outdir.exists():
         logger.debug("creating output directory: {}".format(outdir))
         outdir.mkdir()
-    logger.debug("loading model: {}".format(args.model))
-    transformer_model = SentenceTransformer(args.model)
-    logger.debug("loading input data from file: {}".format(args.input))
-    if args.input.endswith("parquet"):
-        df = process_parquet_input(args.input)
+    logger.debug("loading model: {}".format(model))
+    transformer_model = SentenceTransformer(model)
+    input_file = str(input_file)
+    logger.debug("loading input data from file: {}".format(input_file))
+    if input_file.endswith("parquet"):
+        df = process_parquet_input(input_file)
     else:
-        df = pd.read_csv(args.input, names=["terms"])
+        df = pd.read_csv(input_file, names=["terms"])
         logger.debug("dataframe shape: {}".format(df.shape))
         logger.debug("dropping na...")
         df.dropna(inplace=True)
@@ -75,17 +76,14 @@ def main(args):
         logger.debug("dropping duplicates...")
         df.drop_duplicates(inplace=True)
         logger.debug("dataframe shape: {}".format(df.shape))
-    if args.existing is not None:
-        logger.debug(f"reading existing terms from file: {args.existing}")
-        df_terms_existing = pd.read_parquet(args.existing)
-        terms_to_drop = df_terms_existing.index.values
-        logger.debug(f"found {len(terms_to_drop)} terms. Dropping these from the dataframe...")
-        df = drop_terms(df, terms_to_drop)
+    if existing is not None:
+        logger.debug(f"dropping existing terms from list of {len(existing)} terms to drop")
+        df = drop_terms(df, existing)
         logger.debug("dataframe shape: {}".format(df.shape))
 
     start_idx = 0
-    step = args.chunksize
-    logger.debug("getting embeddings for terms, {} at a time...".format(args.chunksize))
+    step = chunksize
+    logger.debug("getting embeddings for terms, {} at a time...".format(chunksize))
     i = 0
     while True:
         this_start = timer()
@@ -111,6 +109,20 @@ def main(args):
         start_idx += step
         i += 1
     logger.debug("done getting embeddings for all chunks")
+
+
+def main(args):
+    if args.existing is not None:
+        if args.existing.endswith('parquet'):
+            logger.debug(f"reading existing terms from parquet file: {args.existing}")
+            df_terms_existing = pd.read_parquet(args.existing)
+            terms_to_drop = df_terms_existing.index.values
+        else:
+            logger.debug(f"reading existing terms from csv or txt file: {args.existing}")
+            df_terms_existing = pd.read_csv(args.existing, header=None)
+            terms_to_drop = df_terms_existing.iloc[:,0].values
+        logger.debug(f"found {len(terms_to_drop)} terms. Will drop these from the dataframe...")
+    run_get_sentence_transformer_embeddings(args.input, args.output, args.model, terms_to_drop, args.chunksize)
 
 
 if __name__ == "__main__":
@@ -147,7 +159,7 @@ if __name__ == "__main__":
         default="sentence-transformers/all-mpnet-base-v2",
         help="model name or path to use for sentence transformer",
     )
-    parser.add_argument("--existing", help="path to parquet file with index being existing terms to skip")
+    parser.add_argument("--existing", help="path to parquet file with index being existing terms to skip, or csv file with no header and column 0 being these terms")
     parser.add_argument("--debug", action="store_true", help="output debugging info")
     global args
     args = parser.parse_args()

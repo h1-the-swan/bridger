@@ -20,7 +20,7 @@ except ImportError:
 import pandas as pd
 import numpy as np
 
-from bridger_dataprocess.average_embeddings import get_df_dists
+from bridger_dataprocess.average_embeddings import get_df_dists_from_author_id
 
 
 import logging
@@ -68,12 +68,12 @@ class DistGetter:
         fp_ssmat_method = Path("/data/avg_embeddings/ssmat_author_term_method.pickle")
         logger.debug(f"loading file: {fp_ssmat_method}")
         self.ssmat_author_term_method = pickle.loads(fp_ssmat_method.read_bytes())
-        fp_specter = Path("/specter/average_author_specter_embeddings.pickle")
+        fp_specter = Path("/specter/avg_specter/average_author_specter_embeddings.pickle")
         logger.debug(f"loading file: {fp_specter}")
         self.avg_embeddings_specter = pd.read_pickle(fp_specter)
 
     def get_df_dists_for_author(self, author_id) -> pd.DataFrame:
-        return get_df_dists(
+        return get_df_dists_from_author_id(
             author_id,
             ssmat_author_term_task=self.ssmat_author_term_task,
             ssmat_author_term_method=self.ssmat_author_term_method,
@@ -135,11 +135,14 @@ def main(args):
     outdir = Path("/output")
     for author_id in author_ids:
         logger.debug(f"getting df_dists for author_id: {author_id}")
-        df_dists = dist_getter.get_df_dists_for_author(author_id)
-        recs = get_recs(df_dists)
-        outfp = outdir.joinpath(f"recs_{author_id}.pickle")
-        logger.debug(f"saving to {outfp}")
-        outfp.write_bytes(pickle.dumps(recs, protocol=pickle.HIGHEST_PROTOCOL))
+        try:
+            df_dists = dist_getter.get_df_dists_for_author(author_id)
+            recs = get_recs(df_dists)
+            outfp = outdir.joinpath(f"recs_{author_id}.pickle")
+            logger.debug(f"saving to {outfp}")
+            outfp.write_bytes(pickle.dumps(recs, protocol=pickle.HIGHEST_PROTOCOL))
+        except KeyError:
+            logger.info(f"SKIPPING author {author_id}: not found")
 
 
 if __name__ == "__main__":

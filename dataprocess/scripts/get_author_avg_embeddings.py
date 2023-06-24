@@ -31,31 +31,13 @@ root_logger = logging.getLogger()
 logger = root_logger.getChild(__name__)
 
 
-def main(args):
-    outdir = Path(args.outdir)
+# def run_get_author_avg_embeddings(path_to_embeddings, path_to_terms, path_to_paper_term_embeddings, path_to_paper_authors, outdir, min_papers=5, min_year=2017):
+def run_get_author_avg_embeddings(embeddings, embeddings_terms, df_paper_term_embeddings, df_paper_authors, outdir, min_papers=5, min_year=2017):
+    outdir = Path(outdir)
     if outdir.is_dir():
         raise FileExistsError()
     logger.debug(f"creating directory: {outdir}")
     outdir.mkdir()
-
-    logger.debug(f"loading embeddings file: {args.path_to_embeddings}")
-    embeddings = np.load(args.path_to_embeddings)
-    logger.debug(f"len(embeddings)=={len(embeddings)}")
-
-    logger.debug(f"loading embeddings_terms file: {args.path_to_terms}")
-    embeddings_terms = pd.read_parquet(args.path_to_terms)
-    logger.debug(f"len(embeddings_terms)=={len(embeddings_terms)}")
-
-    logger.debug(
-        f"loading paper_term_embeddings file: {args.path_to_paper_term_embeddings}"
-    )
-    df_paper_term_embeddings = pd.read_parquet(args.path_to_paper_term_embeddings)
-    df_paper_term_embeddings["s2_id"] = df_paper_term_embeddings["s2_id"].astype(int)
-    logger.debug(f"len(df_paper_term_embeddings)=={len(df_paper_term_embeddings)}")
-
-    logger.debug(f"loading paper_authors file: {args.path_to_paper_authors}")
-    df_paper_authors = pd.read_parquet(args.path_to_paper_authors)
-    logger.debug(f"df_paper_authors.shape=={df_paper_authors.shape}")
 
     embeddings_terms = embeddings_terms.index.values
     logger.debug("dropping unused embeddings...")
@@ -93,17 +75,17 @@ def main(args):
     ]
     logger.debug(f"after filtering: df_paper_authors.shape=={df_paper_authors.shape}")
 
-    logger.debug(f"discarding all papers published before {args.min_year}")
-    df_paper_authors = df_paper_authors[df_paper_authors.pubYear >= args.min_year]
+    logger.debug(f"discarding all papers published before {min_year}")
+    df_paper_authors = df_paper_authors[df_paper_authors.pubYear >= min_year]
     logger.debug(
         f"after filtering by year: df_paper_authors.shape=={df_paper_authors.shape}"
     )
 
     logger.debug(
-        f"keeping only authors with at least {args.min_papers} since year {args.min_year}"
+        f"keeping only authors with at least {min_papers} since year {min_year}"
     )
     gb = df_paper_authors.groupby("AuthorId").size()
-    gb = gb[gb >= args.min_papers]
+    gb = gb[gb >= min_papers]
     df_paper_authors = df_paper_authors[df_paper_authors.AuthorId.isin(gb.index)]
     logger.debug(
         f"after filtering by number of papers: df_paper_authors.shape=={df_paper_authors.shape}"
@@ -119,9 +101,7 @@ def main(args):
     )
     outfp = outdir.joinpath("ssmat_author_term_task.pickle")
     logger.debug(f"saving matrix to {outfp}")
-    outfp.write_bytes(
-        pickle.dumps(ssmat_author_term_task, protocol=pickle.HIGHEST_PROTOCOL)
-    )
+    outfp.write_bytes(ssmat_author_term_task.to_pickle())
     avg_embeddings_task = get_avg_embeddings(ssmat_author_term_task.mat, embeddings)
     outfp = outdir.joinpath("avg_embeddings_task.pickle")
     logger.debug(f"saving average embeddings to {outfp}")
@@ -137,13 +117,34 @@ def main(args):
     )
     outfp = outdir.joinpath("ssmat_author_term_method.pickle")
     logger.debug(f"saving matrix to {outfp}")
-    outfp.write_bytes(
-        pickle.dumps(ssmat_author_term_method, protocol=pickle.HIGHEST_PROTOCOL)
-    )
+    outfp.write_bytes(ssmat_author_term_method.to_pickle())
     avg_embeddings_method = get_avg_embeddings(ssmat_author_term_method.mat, embeddings)
     outfp = outdir.joinpath("avg_embeddings_method.pickle")
     logger.debug(f"saving average embeddings to {outfp}")
     avg_embeddings_method.to_pickle(outfp, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def main(args):
+    logger.debug(f"loading embeddings file: {args.path_to_embeddings}")
+    embeddings = np.load(args.path_to_embeddings)
+    logger.debug(f"len(embeddings)=={len(embeddings)}")
+
+    logger.debug(f"loading embeddings_terms file: {args.path_to_terms}")
+    embeddings_terms = pd.read_parquet(args.path_to_terms)
+    logger.debug(f"len(embeddings_terms)=={len(embeddings_terms)}")
+
+    logger.debug(
+        f"loading paper_term_embeddings file: {args.path_to_paper_term_embeddings}"
+    )
+    df_paper_term_embeddings = pd.read_parquet(args.path_to_paper_term_embeddings)
+    df_paper_term_embeddings["s2_id"] = df_paper_term_embeddings["s2_id"].astype(int)
+    logger.debug(f"len(df_paper_term_embeddings)=={len(df_paper_term_embeddings)}")
+
+    logger.debug(f"loading paper_authors file: {args.path_to_paper_authors}")
+    df_paper_authors = pd.read_parquet(args.path_to_paper_authors)
+    logger.debug(f"df_paper_authors.shape=={df_paper_authors.shape}")
+
+    run_get_author_avg_embeddings(embeddings, embeddings_terms, df_paper_term_embeddings, df_paper_authors, args.outdir, args.min_papers, args.min_year)
 
 
 if __name__ == "__main__":

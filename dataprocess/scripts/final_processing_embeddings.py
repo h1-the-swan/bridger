@@ -8,6 +8,7 @@ import sys, os, time
 from pathlib import Path
 from datetime import datetime
 from timeit import default_timer as timer
+from typing import Optional, Union
 
 try:
     from humanfriendly import format_timespan
@@ -26,11 +27,10 @@ import pandas as pd
 import numpy as np
 
 
-def main(args):
-    outdir = Path(args.outdir)
-    embeddings_dirpath = Path(args.embeddings_dirpath)
-    fpath_embeddings = embeddings_dirpath.joinpath("embeddings_dedup.npy")
-    fpath_terms = embeddings_dirpath.joinpath("terms_dedup.npy")
+def run_final_processing_embeddings(input, fpath_embeddings, fpath_terms, outdir, score_threshold=0.9, existing: Optional[Union[str, Path]] = None):
+    outdir = Path(outdir)
+    fpath_embeddings = Path(fpath_embeddings)
+    fpath_terms = Path(fpath_terms)
 
     logger.debug(f"loading terms from {fpath_terms}")
     terms = np.load(fpath_terms, allow_pickle=True)
@@ -45,8 +45,8 @@ def main(args):
     embeddings = embeddings[terms_unique_indices]
     logger.debug(f"there are now {len(terms)} terms and {len(embeddings)} embeddings")
 
-    if args.existing:
-        dirpath_old = Path(args.existing)
+    if existing:
+        dirpath_old = Path(existing)
         fpath = dirpath_old.joinpath("embedding_term_to_id.parquet")
         logger.debug(f"loading old embedding terms from {fpath}")
         embedding_term_to_id_old = pd.read_parquet(fpath)
@@ -66,15 +66,15 @@ def main(args):
         embeddings = embeddings[terms_dedup_unique_indices]
         logger.debug(f"deduplicated array shape: {embeddings.shape}")
 
-    logger.debug(f"reading input file: {args.input}")
-    df = pd.read_parquet(args.input)
+    logger.debug(f"reading input file: {input}")
+    df = pd.read_parquet(input)
     logger.debug(f"dataframe shape: {df.shape}")
     labels = ["Task", "Method", "Material"]
     logger.debug(f"filtering by labels: {labels}")
     df = df[df["label"].isin(labels)]
     logger.debug(f"dataframe shape: {df.shape}")
-    logger.debug(f"filtering by score >= {args.score_threshold}")
-    df = df[df["score"] >= args.score_threshold]
+    logger.debug(f"filtering by score >= {score_threshold}")
+    df = df[df["score"] >= score_threshold]
     logger.debug(f"dataframe shape: {df.shape}")
     df["s2_id"] = df["s2_id"].astype(int)
 
@@ -84,10 +84,10 @@ def main(args):
     df = df.groupby(list(df.columns)).size().rename("freq").reset_index()
     logger.debug(f"dataframe shape: {df.shape}")
 
-    if args.existing:
-        dirpath_old = Path(args.existing)
+    if existing:
+        dirpath_old = Path(existing)
         fpath = dirpath_old.joinpath(
-            f"dygie_embedding_term_ids_to_s2_id_scoreThreshold{args.score_threshold:.2f}.parquet"
+            f"dygie_embedding_term_ids_to_s2_id_scoreThreshold{score_threshold:.2f}.parquet"
         )
         logger.debug(f"reading old paper-to-terms data from {fpath}")
         # ignore old term IDs
@@ -147,7 +147,7 @@ def main(args):
         logger.debug(f"using output directory: {outdir}")
 
     outf = outdir.joinpath(
-        f"dygie_embedding_term_ids_to_s2_id_scoreThreshold{args.score_threshold:.2f}.parquet"
+        f"dygie_embedding_term_ids_to_s2_id_scoreThreshold{score_threshold:.2f}.parquet"
     )
     logger.debug(f"saving to {outf} (dataframe shape: {df.shape}")
     df.to_parquet(outf)
@@ -161,6 +161,12 @@ def main(args):
     logger.debug(f"saving to {outf} ({len(embeddings)} embeddings)")
     np.save(outf, embeddings)
 
+
+def main(args):
+    embeddings_dirpath = Path(args.embeddings_dirpath)
+    fpath_embeddings = embeddings_dirpath.joinpath("embeddings_dedup.npy")
+    fpath_terms = embeddings_dirpath.joinpath("terms_dedup.npy")
+    run_final_processing_embeddings(args.input, fpath_embeddings, fpath_terms, args.outdir, args.score_threshold, args.existing)
 
 if __name__ == "__main__":
     total_start = timer()

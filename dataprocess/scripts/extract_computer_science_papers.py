@@ -8,7 +8,7 @@ import gzip
 from pathlib import Path
 from datetime import datetime
 from timeit import default_timer as timer
-from typing import Dict
+from typing import Dict, Container, Optional, Union, Iterable
 
 try:
     from humanfriendly import format_timespan
@@ -32,12 +32,31 @@ def check_category(paper: Dict, name: str) -> bool:
         return False
 
 
-def main(args):
-    input_dirpath = Path(args.input)
-    outfp = Path(args.output)
+def process_one_line(
+    line: str,
+    ignore_ids: Container[int] = set(),
+    category_name: str = "computer science",
+) -> Union[Dict, None]:
+    record = json.loads(line)
+    if (record["corpusid"] not in ignore_ids) and (
+        check_category(record, category_name)
+    ):
+        return record
+    else:
+        return None
+
+
+def run_extract_computer_science_papers(
+    input_dirpath: Union[str, Path],
+    outfp: Union[str, Path],
+    ignore_ids: Container[int] = set(),
+):
+    input_dirpath = Path(input_dirpath)
+    outfp = Path(outfp)
     logger.debug(f"opening file for write: {outfp}")
     outf = gzip.open(outfp, mode="wt")
     num_lines_written = 0
+
     try:
         for fp in input_dirpath.glob("*.gz"):
             logger.debug(f"processing input file: {fp}")
@@ -46,8 +65,10 @@ def main(args):
                 this_file_num_lines_written = 0
                 for line in f:
                     if line:
-                        record = json.loads(line)
-                        if check_category(record, "computer science"):
+                        record = process_one_line(
+                            line, ignore_ids, category_name="computer science"
+                        )
+                        if record is not None:
                             outf.write(line)
                             num_lines_written += 1
                             this_file_num_lines_written += 1
@@ -59,6 +80,18 @@ def main(args):
     finally:
         logger.debug(f"closing output file. {num_lines_written} lines written.")
         outf.close()
+
+
+def main(args):
+    ignore_ids = set()
+    if args.existing:
+        fp = Path(args.existing)
+        logger.debug(f"loading paper ids to ignore from file: {fp}")
+        with fp.open() as f:
+            for line in f:
+                ignore_ids.add(int(line.strip()))
+        logger.debug(f"found {len(ignore_ids)} paper IDs to ignore")
+    run_extract_computer_science_papers(args.input, args.output, existing=ignore_ids)
 
 
 if __name__ == "__main__":
@@ -83,6 +116,10 @@ if __name__ == "__main__":
         help="input directory with papers in gzipped JSONL files (with extension .gz)",
     )
     parser.add_argument("output", help="output filename (.gz)")
+    parser.add_argument(
+        "--existing",
+        help="path to file containing paper ids to ignore, because they have already been processed (newline separated text file with integer IDs)",
+    )
     parser.add_argument("--debug", action="store_true", help="output debugging info")
     global args
     args = parser.parse_args()

@@ -6,6 +6,7 @@ import sys, os, time
 from pathlib import Path
 from datetime import datetime
 from timeit import default_timer as timer
+from typing import Optional
 
 try:
     from humanfriendly import format_timespan
@@ -24,17 +25,17 @@ import pandas as pd
 import numpy as np
 
 
-def main(args):
-    outdir = Path(args.outdir)
-    logger.debug(f"reading input file: {args.input}")
-    df_ner = pd.read_parquet(args.input)
+def run_final_processing_terms(input_file, outdir, score_threshold=0.9, old_data: Optional[str]=None):
+    outdir = Path(outdir)
+    logger.debug(f"reading input file: {input_file}")
+    df_ner = pd.read_parquet(input_file)
     logger.debug(f"dataframe shape: {df_ner.shape}")
     labels = ["Task", "Method", "Material"]
     logger.debug(f"filtering by labels: {labels}")
     df_ner = df_ner[df_ner["label"].isin(labels)]
     logger.debug(f"dataframe shape: {df_ner.shape}")
-    logger.debug(f"filtering by score >= {args.score_threshold}")
-    df_ner = df_ner[df_ner["score"] >= args.score_threshold]
+    logger.debug(f"filtering by score >= {score_threshold}")
+    df_ner = df_ner[df_ner["score"] >= score_threshold]
     logger.debug(f"dataframe shape: {df_ner.shape}")
 
     columns_to_keep = ["s2_id", "label", "term_normalized", "term_display"]
@@ -47,10 +48,10 @@ def main(args):
 
     df_ner["s2_id"] = df_ner["s2_id"].astype(int)
 
-    if args.old_data:
-        logger.debug(f"loading old data from {args.old_data}")
+    if old_data:
+        logger.debug(f"loading old data from {old_data}")
         df_ner_old = (
-            pd.read_parquet(args.old_data)
+            pd.read_parquet(old_data)
             .drop(columns=["term_id"])
             .dropna(subset=["s2_id"])
         )
@@ -107,16 +108,20 @@ def main(args):
         logger.debug(f"using output directory: {outdir}")
 
     outf = outdir.joinpath(
-        f"terms_to_s2_id_scoreThreshold{args.score_threshold:.2f}.parquet"
+        f"terms_to_s2_id_scoreThreshold{score_threshold:.2f}.parquet"
     )
     logger.debug(f"saving to {outf} (dataframe shape: {df_ner.shape}")
     df_ner.to_parquet(outf)
 
     outf = outdir.joinpath(
-        f"dygie_term_ids_scoreThreshold{args.score_threshold:.2f}.parquet"
+        f"dygie_term_ids_scoreThreshold{score_threshold:.2f}.parquet"
     )
     logger.debug(f"saving to {outf} (dataframe shape: {term_ids.shape}")
     term_ids.to_parquet(outf)
+
+
+def main(args):
+    run_final_processing_terms(args.input, args.outdir, args.score_threshold, args.old_data)
 
 
 if __name__ == "__main__":

@@ -2,9 +2,10 @@
 
 DESCRIPTION = """Given a JSONL file of papers from S2AG, save a table mapping paper to author and author-sequence-number"""
 
-import fileinput
 import json
+import gzip
 import sys, os, time
+from typing import Union
 from pathlib import Path
 from datetime import datetime
 from timeit import default_timer as timer
@@ -28,20 +29,21 @@ logger = root_logger.getChild(__name__)
 
 def yield_paper_author_row(file):
     fp = Path(file)
-    with fileinput.hook_compressed(fp, mode="rt") as f:
+    with gzip.open(fp, mode="rt") as f:
         for line in f:
-            paper = json.loads(line)
-            for author_pos, author in enumerate(paper.get("authors", [])):
-                yield {
-                    "PaperId": paper["corpusid"],
-                    "AuthorId": author["authorId"],
-                    "AuthorSequenceNumber": author_pos + 1,
-                    "pubYear": paper["year"],
-                }
+            if line:
+                paper = json.loads(line)
+                for author_pos, author in enumerate(paper.get("authors", [])):
+                    yield {
+                        "PaperId": paper["corpusid"],
+                        "AuthorId": author["authorId"],
+                        "AuthorSequenceNumber": author_pos + 1,
+                        "pubYear": paper["year"],
+                    }
 
 
-def main(args):
-    fp = Path(args.input)
+def run_get_PaperAuthors_table(input_file: Union[Path, str], output_file: Union[Path, str]):
+    fp = Path(input_file)
     d = []
     logger.debug(f"processing input file: {fp}")
     i = 0
@@ -56,9 +58,13 @@ def main(args):
     )
     df = pd.DataFrame(d)
     logger.debug(
-        f"saving dataframe with shape {df.shape} to output file: {args.output}"
+        f"saving dataframe with shape {df.shape} to output file: {output_file}"
     )
-    df.to_parquet(args.output)
+    df.to_parquet(output_file)
+
+
+def main(args):
+    run_get_PaperAuthors_table(args.input, args.output)
 
 
 if __name__ == "__main__":

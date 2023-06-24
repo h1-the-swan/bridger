@@ -10,7 +10,7 @@ from pathlib import Path
 from datetime import datetime
 from timeit import default_timer as timer
 from string import punctuation, ascii_uppercase
-from typing import Mapping, Optional, Tuple
+from typing import Mapping, Optional, Tuple, Union
 
 try:
     from humanfriendly import format_timespan
@@ -259,11 +259,11 @@ def load_abbreviations(parquet_fpath) -> pd.DataFrame:
     return df
 
 
-def main(args):
-    nlp = spacy.load(args.spacy_model, disable=["parser", "ner"])
-    logger.debug("reading input data: {}".format(args.input))
+def run_normalize_ner_terms(input_file: Union[str, Path], output_file: Union[str, Path], spacy_model="en_core_sci_sm", abbreviations: Optional[Union[Path, str]] = None, processes: Optional[int] = None, checkpoint=False):
+    nlp = spacy.load(spacy_model, disable=["parser", "ner"])
+    logger.debug("reading input data: {}".format(input_file))
     df_ner = (
-        pd.read_parquet(args.input)
+        pd.read_parquet(input_file)
         .dropna(subset=["s2_id", "term"])
         .drop_duplicates(subset=["s2_id", "term"])
     )
@@ -278,8 +278,8 @@ def main(args):
     # ]
     logger.debug(f"there are {df_ner.term.nunique()} unique terms")
 
-    if args.abbreviations is not None:
-        df_abbreviations = load_abbreviations(args.abbreviations)
+    if abbreviations is not None:
+        df_abbreviations = load_abbreviations(abbreviations)
     #     raw_terms = expand_abbreviations(raw_terms, df_abbreviations)
     else:
         df_abbreviations = None
@@ -288,8 +288,8 @@ def main(args):
     # df_ner['term_cleaned'] = df_ner['term'].apply(clean_terms)
     df_ner["term_cleaned"] = clean_terms(df_ner, df_abbreviations)
 
-    if args.debug:
-        ckpt_outfp = Path(args.output)
+    if checkpoint is True:
+        ckpt_outfp = Path(output_file)
         ckpt_outfp = ckpt_outfp.with_name(
             f"{ckpt_outfp.stem}_CHECKPOINT_{get_timestamp()}{ckpt_outfp.suffix}"
         )
@@ -303,7 +303,7 @@ def main(args):
     # terms = df_terms['term_cleaned'].values
     logger.debug("there are {} unique terms".format(len(terms)))
     logger.debug("lemmatizing and normalizing...")
-    n_process = args.processes
+    n_process = processes
     if n_process is None:
         n_process = cpu_count()
     docs = list(nlp.pipe(terms, n_process=n_process))
@@ -320,10 +320,16 @@ def main(args):
     # df_out.term_display.fillna(df_out.term, inplace=True)
     df_out.term_display.fillna(df_out.term_cleaned, inplace=True)
     logger.debug(
-        "writing dataframe (shape: {}) to file: {}".format(df_out.shape, args.output)
+        "writing dataframe (shape: {}) to file: {}".format(df_out.shape, output_file)
     )
-    df_out.to_parquet(args.output)
+    df_out.to_parquet(output_file)
 
+def main(args):
+    if args.debug:
+        checkpoint = True
+    else:
+        checkpoint = False
+    run_normalize_ner_terms(args.input, args.output, args.spacy_model, args.abbreviations, args.processes, checkpoint=checkpoint)
 
 if __name__ == "__main__":
     total_start = timer()

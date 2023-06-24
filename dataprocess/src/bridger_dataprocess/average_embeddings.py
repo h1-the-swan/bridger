@@ -158,19 +158,19 @@ def get_avg_specter(
 
 
 def get_df_dists(
-    author_id: Union[str, int],
     ssmat_author_term_task: SciSightMatrix,
     avg_embeddings_task: pd.Series,
     ssmat_author_term_method: SciSightMatrix,
     avg_embeddings_method: pd.Series,
+    focal_embedding_task: np.ndarray,
+    focal_embedding_method: np.ndarray,
     avg_embeddings_specter: Optional[pd.Series] = None,
+    focal_embedding_specter: Optional[np.ndarray] = None,
     # get_paper_count=False,
 ) -> pd.DataFrame:
-    # get a dataframe with Task and Method distances for a single focal author
-    author_idx = ssmat_author_term_task.row_label_to_row_idx[str(author_id)]
-    focal_embedding = avg_embeddings_task.loc[author_idx]
+    # get a dataframe with Task and Method distances given single (focal) embeddings for task, method, and optionally specter
     arr = np.array(avg_embeddings_task.tolist())
-    cdist_task = cosine_distances(focal_embedding.reshape(1, -1), arr)
+    cdist_task = cosine_distances(focal_embedding_task.reshape(1, -1), arr)
     df_cdist_task = pd.DataFrame(
         {"cosine_distance_task": cdist_task[0], "author_idx": range(len(cdist_task[0]))}
     ).sort_values("cosine_distance_task")
@@ -180,10 +180,8 @@ def get_df_dists(
         .astype(int)
     )
 
-    author_idx = ssmat_author_term_method.row_label_to_row_idx[str(author_id)]
-    focal_embedding = avg_embeddings_method.loc[author_idx]
     arr = np.array(avg_embeddings_method.tolist())
-    cdist_method = cosine_distances(focal_embedding.reshape(1, -1), arr)
+    cdist_method = cosine_distances(focal_embedding_method.reshape(1, -1), arr)
     df_cdist_method = pd.DataFrame(
         {
             "cosine_distance_method": cdist_method[0],
@@ -202,10 +200,9 @@ def get_df_dists(
     df_dists["method_dist"] = df_cdist_method.set_index("AuthorId")[
         "cosine_distance_method"
     ]
-    if avg_embeddings_specter is not None:
+    if avg_embeddings_specter is not None and focal_embedding_specter is not None:
         arr = np.vstack(avg_embeddings_specter.values)
-        focal_embedding = avg_embeddings_specter.loc[int(author_id)]
-        cdist_specter = cosine_distances(focal_embedding.reshape(1, -1), arr)
+        cdist_specter = cosine_distances(focal_embedding_specter.reshape(1, -1), arr)
         df_cdist_specter = pd.DataFrame(
             cdist_specter[0],
             index=avg_embeddings_specter.index,
@@ -223,4 +220,37 @@ def get_df_dists(
     #         .size()
     #     )
 
+    return df_dists
+
+
+def get_df_dists_from_author_id(
+    author_id: Union[str, int],
+    ssmat_author_term_task: SciSightMatrix,
+    avg_embeddings_task: pd.Series,
+    ssmat_author_term_method: SciSightMatrix,
+    avg_embeddings_method: pd.Series,
+    avg_embeddings_specter: Optional[pd.Series] = None,
+) -> pd.DataFrame:
+    # get a dataframe with Task and Method distances for a single focal author
+    author_idx = ssmat_author_term_task.row_label_to_row_idx[str(author_id)]
+    focal_embedding_task = avg_embeddings_task.loc[author_idx]
+
+    author_idx = ssmat_author_term_method.row_label_to_row_idx[str(author_id)]
+    focal_embedding_method = avg_embeddings_method.loc[author_idx]
+
+    if avg_embeddings_specter is not None:
+        focal_embedding_specter = avg_embeddings_specter.loc[int(author_id)]
+    else:
+        focal_embedding_specter = None
+
+    df_dists = get_df_dists(
+        ssmat_author_term_task=ssmat_author_term_task,
+        avg_embeddings_task=avg_embeddings_task,
+        ssmat_author_term_method=ssmat_author_term_method,
+        avg_embeddings_method=avg_embeddings_method,
+        focal_embedding_task=focal_embedding_task,
+        focal_embedding_method=focal_embedding_method,
+        avg_embeddings_specter=avg_embeddings_specter,
+        focal_embedding_specter=focal_embedding_specter,
+    )
     return df_dists.drop(author_id)

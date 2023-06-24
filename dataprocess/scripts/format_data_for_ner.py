@@ -4,7 +4,7 @@ DESCRIPTION = """Format dataset for use with pytorch/transformers
 """
 
 import sys, os, time, json
-from typing import List, TypedDict, Union
+from typing import List, TypedDict, Union, Optional
 from pathlib import Path
 from datetime import datetime
 from timeit import default_timer as timer
@@ -42,33 +42,34 @@ from bridger_dataprocess import format_doc
 #     return p.with_name(n)
 
 
-def main(args):
+def run_format_data_for_ner(input_parquet_file, output, start: Optional[int] = None, end: Optional[int] = None, expand_abbreviations=False):
     nlp = spacy.load("en_core_sci_sm")
-    if args.expand_abbreviations is True:
+    if expand_abbreviations is True:
         raise RuntimeError("expand_abbreviations has not been implemented yet")
         # from scispacy.abbreviation import AbbreviationDetector
 
         # # Add the abbreviation pipe to the spacy pipeline.
         # nlp.add_pipe("abbreviation_detector")
 
-    outfpath = Path(args.output)
-    logger.debug("loading input file: {}".format(args.input))
-    columns = ["corpusid", "title", "abstract"]
-    df = pd.read_parquet(args.input, columns=columns)
+    outfpath = Path(output)
+    logger.debug("loading input file: {}".format(input_parquet_file))
+    columns = ["corpusId", "title", "abstract"]
+    df = pd.read_parquet(input_parquet_file, columns=columns)
     logger.debug("input file has shape: {}".format(df.shape))
 
-    idx_start = args.start
+    idx_start = start
     if idx_start is None:
         idx_start = 0
-    idx_end = args.end
+    idx_end = end
     if idx_end is None:
         idx_end = len(df)
-    outfpath = Path(args.output)
+    outfpath = Path(output)
     df = df.reset_index()
     df = df.iloc[idx_start:idx_end]
 
-    df = df.set_index("corpusid")
+    df = df.set_index("corpusId")
     data = df["title"] + ". " + df["abstract"]
+    data.dropna(inplace=True)
     # data cleaning
     data = data.str.replace("\n", " ")
     # data = data.str.replace('\u2008', '')
@@ -81,7 +82,7 @@ def main(args):
     logger.debug("starting with paper {}".format(data.index[0]))
     try:
         for paper_id, text in data.iteritems():
-            if args.expand_abbreviations is True:
+            if expand_abbreviations is True:
                 raise RuntimeError("expand_abbreviations has not been implemented yet")
                 # outline = format_doc_expand_abbreviations(paper_id, text, nlp)
             else:
@@ -91,6 +92,10 @@ def main(args):
                 line_num += 1
     finally:
         outf.close()
+
+
+def main(args):
+    run_format_data_for_ner(args.input, args.output, args.start, args.end, args.expand_abbreviations)
 
 
 if __name__ == "__main__":

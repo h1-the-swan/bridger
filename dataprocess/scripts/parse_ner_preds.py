@@ -36,12 +36,13 @@ def load_jsonl_file(filepath: Union[Path, str]) -> Optional[List[Dict]]:
     return data
 
 
-def main(args):
+def run_parse_ner_preds(input_dir: Union[str, Path], output: Union[str, Path], ext: str = '.json'):
     rows = []
-    dirpath = Path(args.input_dir)
-    ext = args.ext.strip(".")
-    if args.output.split(".")[-1] not in ["parquet", "csv"]:
-        raise ValueError(f"invalid output filename: {args.output}")
+    dirpath = Path(input_dir)
+    ext = ext.strip(".")
+    output = str(output)
+    if output.split(".")[-1] not in ["parquet", "csv"]:
+        raise ValueError(f"invalid output filename: {output}")
     #  ner_docs = []
     for fp in dirpath.glob(f"*.{ext}"):
         ner_data = load_jsonl_file(fp)
@@ -53,14 +54,18 @@ def main(args):
             for row in yield_ner_row(doc):
                 rows.append(row)
     df = pd.DataFrame(rows)
-    logger.debug(f"writing to file: {args.output}")
-    if args.output.endswith("parquet"):
-        df.to_parquet(args.output)
-    elif args.output.endswith("csv"):
-        df.to_csv(args.output)
+    logger.debug(f"writing to file: {output}")
+    if output.endswith("parquet"):
+        df.to_parquet(output)
+    elif output.endswith("csv"):
+        df.to_csv(output)
     else:
         # this shouldn't happen
-        raise ValueError(f"invalid output filename: {args.output}")
+        raise ValueError(f"invalid output filename: {output}")
+
+
+def main(args):
+    run_parse_ner_preds(args.input_dir, args.output, args.ext)
 
 
 if __name__ == "__main__":

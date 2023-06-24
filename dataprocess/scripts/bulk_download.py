@@ -6,7 +6,7 @@ import sys, os, time
 from pathlib import Path
 from datetime import datetime
 from timeit import default_timer as timer
-from typing import List
+from typing import List, Union
 from urllib.parse import urlparse
 
 from dotenv import load_dotenv, find_dotenv
@@ -82,9 +82,9 @@ def download_file(download_url: str, outdir_base: Path) -> str:
     return "success"
 
 
-def main(args):
-    outdir_base = Path(args.outdir)
-    files = get_dataset_download_urls(args.dataset_name)
+def run_bulk_download(outdir: Union[str, Path], dataset_name: str):
+    outdir_base = Path(outdir)
+    files = get_dataset_download_urls(dataset_name)
     while True:
         if all([get_outfp(file, outdir_base).exists() for file in files]):
             break
@@ -93,12 +93,16 @@ def main(args):
             return_msg = download_file(file, outdir_base)
             if return_msg == "bad url":
                 logger.debug("400 bad url error encountered. getting download urls again.")
-                files = get_dataset_download_urls(args.dataset_name)
+                files = get_dataset_download_urls(dataset_name)
                 break
             elif return_msg == "success":
                 num_successes += 1
         if num_successes == 0:
             break
+
+
+def main(args):
+    run_bulk_download(args.outdir, args.dataset_name)
 
 
 if __name__ == "__main__":
