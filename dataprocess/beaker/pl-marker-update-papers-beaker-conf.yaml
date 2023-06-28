@@ -1,8 +1,10 @@
 version: v2
-description: PL-marker update papers TEST3.0
+description: PL-marker update papers
 tasks:
   - name: pl-marker-update-papers
     image:
+      # Note that this uses a different image from the other update scripts.
+      # The source for this image is in its own repository (PL-marker)
       beaker: jasonp/pl-marker-ner2
     command:
       [

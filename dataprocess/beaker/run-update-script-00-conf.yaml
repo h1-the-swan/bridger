@@ -1,7 +1,7 @@
 version: v2
-description: Run update script 00 (part 1) TEST3.0
+description: Run update script 00 (part 1)
 tasks:
-  - name: run-update-script-00-TEST3.0
+  - name: run-update-script-00
     image:
       beaker: jasonp/bridger_dataprocess
     command:

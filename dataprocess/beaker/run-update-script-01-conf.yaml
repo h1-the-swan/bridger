@@ -1,7 +1,7 @@
 version: v2
-description: Run update script 01 (part 2) TEST3.1
+description: Run update script 01 (part 2)
 tasks:
-  - name: run-update-script-01-TEST2
+  - name: run-update-script-01
     image:
       beaker: jasonp/bridger_dataprocess
     command:
@@ -12,17 +12,16 @@ tasks:
     datasets:
       - mountPath: /data/pl-marker-output
         source:
+          # REPLACE THIS with the output of the pl-marker step for this update (pl-marker-update-papers -- "PL-Marker NER extraction")
           beaker: 01H3WDHMVYQ8AD0S53RDDT9AR1
       - mountPath: /data/previous_update
         source:
+          # REPLACE THIS with the output of the previous update (script01 -- final steps)
           beaker: 01H3Q58GBEZ74J2MMP59GCFMJ2
       - mountPath: /data/script00_output
+          # REPLACE THIS with the output of the first step of this update  (script00 -- "Get new papers and format for NER extraction")
         source:
           beaker: 01H3W7JV3PHK8DGMF1HFMY2GC6
-      # - mountPath: /data/paper_authors
-      #   # todo: should replace this with output from script 00
-      #   source:
-      #     beaker: 01H3Q14PXJM9BXF8X0AES8PN09
       - mountPath: /model
         source:
           beaker: jasonp/en_core_sci_sm-0.5.0.tar.gz
