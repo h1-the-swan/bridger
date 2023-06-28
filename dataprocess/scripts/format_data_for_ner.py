@@ -42,7 +42,7 @@ from bridger_dataprocess import format_doc
 #     return p.with_name(n)
 
 
-def run_format_data_for_ner(input_parquet_file, output, start: Optional[int] = None, end: Optional[int] = None, expand_abbreviations=False):
+def run_format_data_for_ner(input_parquet_file, output, start: Optional[int] = None, end: Optional[int] = None, chunksize: Optional[int] = None, expand_abbreviations=False):
     nlp = spacy.load("en_core_sci_sm")
     if expand_abbreviations is True:
         raise RuntimeError("expand_abbreviations has not been implemented yet")
@@ -75,13 +75,21 @@ def run_format_data_for_ner(input_parquet_file, output, start: Optional[int] = N
     # data = data.str.replace('\u2008', '')
     logger.debug("processing {} papers (titles and abstracts)".format(len(data)))
 
-    logger.debug("writing to file: {}".format(outfpath))
-    outf = outfpath.open("w")
+    if chunksize is not None:
+        chunk_idx = 0
+        outfpath_chunk = outfpath.with_stem(f"{outfpath.stem}_chunk{chunk_idx:04d}")
+        logger.debug("writing to file: {}".format(outfpath_chunk))
+        outf = outfpath_chunk.open("w")
+    else:
+        logger.debug("writing to file: {}".format(outfpath))
+        outf = outfpath.open("w")
 
     line_num = idx_start
     logger.debug("starting with paper {}".format(data.index[0]))
+    i = 0
     try:
         for paper_id, text in data.iteritems():
+            i += 1
             if expand_abbreviations is True:
                 raise RuntimeError("expand_abbreviations has not been implemented yet")
                 # outline = format_doc_expand_abbreviations(paper_id, text, nlp)
@@ -90,6 +98,13 @@ def run_format_data_for_ner(input_parquet_file, output, start: Optional[int] = N
             if outline["sentences"]:
                 print(json.dumps(outline), file=outf)
                 line_num += 1
+            if chunksize is not None and i % chunksize == 0:
+                outf.close()
+                chunk_idx += 1
+                outfpath_chunk = outfpath.with_stem(f"{outfpath.stem}_chunk{chunk_idx:04d}")
+                logger.debug("writing to file: {}".format(outfpath_chunk))
+                outf = outfpath_chunk.open("w")
+
     finally:
         outf.close()
 

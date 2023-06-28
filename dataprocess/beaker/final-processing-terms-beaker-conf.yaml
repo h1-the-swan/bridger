@@ -1,0 +1,32 @@
+version: v2
+description: Final processing for NER terms
+tasks:
+  - name: final-processing-terms
+    image:
+      beaker: jasonp/bridger_dataprocess
+    command:
+      [
+        python,
+        -u,
+        scripts/final_processing_terms.py,
+        /data/terms_lemmatized_cleaned.parquet,
+        /output,
+        --debug
+      ]
+    datasets:
+      - mountPath: /data
+        source:
+          beaker: 01GFV2XVQ8RS32J8B94YXH1NDJ
+    result:
+      # Beaker will capture anything that's written to this location and store it in the results
+      # dataset.
+      path: /output
+    resources:
+      cpuCount: 16
+      memory: 100 GiB
+    context:
+      cluster: ai2/s2-elanding
+      priority: normal
+
+
+

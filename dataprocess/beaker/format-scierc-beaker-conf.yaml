@@ -1,0 +1,27 @@
+version: v2
+description: Format titles and abstracts for NER task
+tasks:
+  - name: format-scierc
+    image:
+      beaker: jasonp/bridger_dataprocess
+    command:
+      [
+        ./format-scierc-entrypoint.sh
+      ]
+    datasets:
+      - mountPath: /model
+        source:
+          beaker: jasonp/en_core_sci_sm-0.5.0.tar.gz
+      - mountPath: /data
+        source:
+          beaker: jasonp/computer_science_papers_and_abstracts.parquet
+    result:
+      # Beaker will capture anything that's written to this location and store it in the results
+      # dataset.
+      path: /output
+    resources:
+      # gpuCount: 1
+      gpuCount: 0
+    context:
+      cluster: ai2/s2-cirrascale
+      priority: normal

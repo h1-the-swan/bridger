@@ -1,0 +1,34 @@
+version: v2
+description: Get sentence transformer embeddings for NER terms
+tasks:
+  - name: get-sentence-transformer-embeddings-update
+    image:
+      beaker: jasonp/bridger_dataprocess
+    command:
+      [
+        python,
+        -u,
+        scripts/get_sentence_transformer_embeddings.py,
+        /data/input/terms_lemmatized_clean.parquet,
+        /output,
+        --existing,
+        /data/existing/existing_embedding_terms.csv,
+        --debug
+      ]
+    datasets:
+      - mountPath: /data/input
+        source:
+          beaker: 01H1ET5PF04KD4WN1KG2DXA40M
+      - mountPath: /data/existing
+        source:
+          beaker: 01H1ET33EAMZT24JRDC56HZ5X7
+    result:
+      # Beaker will capture anything that's written to this location and store it in the results
+      # dataset.
+      path: /output
+    resources:
+      gpuCount: 1
+    context:
+      cluster: ai2/s2-elanding
+      priority: normal
+

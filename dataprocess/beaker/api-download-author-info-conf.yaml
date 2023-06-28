@@ -1,0 +1,28 @@
+version: v2
+description: Download author info from the S2 API
+tasks:
+  - name: api-download-author-info
+    image:
+      beaker: jasonp/bridger_dataprocess
+    command:
+      [
+        python,
+        -u,
+        scripts/api_download_author_info.py,
+        /data/author_ids_cleaned.txt,
+        /output/author_info.pickle,
+      ]
+    datasets:
+      - mountPath: /data
+        source:
+          beaker: 01GGR4JFANCJCG04X7YDSXPQT7
+    result:
+      # Beaker will capture anything that's written to this location and store it in the results
+      # dataset.
+      path: /output
+    resources:
+      # cpuCount: 16
+      memory: 64 GiB
+    context:
+      cluster: ai2/s2-elanding
+      priority: normal

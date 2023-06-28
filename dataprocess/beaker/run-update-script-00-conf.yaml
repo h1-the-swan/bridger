@@ -1,0 +1,31 @@
+version: v2
+description: Run update script 00 (part 1) TEST3.0
+tasks:
+  - name: run-update-script-00-TEST3.0
+    image:
+      beaker: jasonp/bridger_dataprocess
+    command:
+      [
+        bash,
+        run_update_script_00_entrypoint.sh
+      ]
+    datasets:
+      - mountPath: /data/existing
+        source:
+          # REPLACE THIS with the output of the previous update (script01 -- final steps)
+          beaker: 01H3Q58GBEZ74J2MMP59GCFMJ2
+      - mountPath: /model
+        source:
+          beaker: jasonp/en_core_sci_sm-0.5.0.tar.gz
+    result:
+      # Beaker will capture anything that's written to this location and store it in the results
+      # dataset.
+      path: /output
+    envVars:
+      - name: S2_API_KEY
+        secret: S2_API_KEY
+    resources:
+      memory: 64 GiB
+    context:
+      cluster: ai2/s2-elanding
+      priority: normal

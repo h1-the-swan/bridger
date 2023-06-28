@@ -66,7 +66,12 @@ def get_batch_paper_data_from_api(
     for i, chunk in enumerate(chunks(paper_ids, batch_size)):
         logger.info(f"making API request. i={i}. number of paper ids = {len(chunk)}")
         r = make_api_request(S2_API_ENDPOINT, chunk, fields=fields, api_key=api_key)
-        results = [item for item in r.json() if item is not None]
-        data.extend(results)
+        for item in r.json():
+            if item is not None:
+                try:
+                    check_for_keys = item.keys()
+                    data.append(item)
+                except AttributeError:
+                    logger.error(f"skipping item--- item from api should be a dict, but instead is: {item}")
     logger.info(f"done collecting info for {len(data)} papers")
     return data

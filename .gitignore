@@ -17,9 +17,13 @@ notebooks/
 
 *.slurm
 
-# ignore beaker directory for now
-beaker/
-
-poetry.lock.bak
+poetry.lock.bak*
 pyproject.toml.bak
 scratch.txt
+
+**/beaker/*.csv
+**/beaker/*.txt
+
+test_authors_for_personas.txt
+
+*TEST*.csv

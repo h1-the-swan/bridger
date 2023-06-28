@@ -1,0 +1,28 @@
+version: v2
+description: Normalize NER terms
+tasks:
+  - name: normalize-ner
+    image:
+      beaker: jasonp/bridger_dataprocess
+    command:
+      [
+        ./normalize-terms-entrypoint.sh
+      ]
+    datasets:
+      - mountPath: /model
+        source:
+          beaker: jasonp/en_core_sci_sm-0.5.0.tar.gz
+      - mountPath: /data
+        source:
+          beaker: jasonp/terms_from_papers.parquet
+    result:
+      # Beaker will capture anything that's written to this location and store it in the results
+      # dataset.
+      path: /output
+    resources:
+      # gpuCount: 1
+      # gpuCount: 0
+      cpuCount: 20
+    context:
+      cluster: ai2/s2-elanding
+      priority: normal

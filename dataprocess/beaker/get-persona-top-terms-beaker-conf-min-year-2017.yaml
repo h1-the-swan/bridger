@@ -1,0 +1,40 @@
+version: v2
+description: Get top terms (tasks and methods) for all personas (min year 2017)
+tasks:
+  - name: get-persona-top-terms-min-year-2017
+    image:
+      beaker: jasonp/bridger_dataprocess
+    command:
+      [
+        python,
+        -u,
+        scripts/get_persona_top_terms.py,
+        /data/personas/personas_dict_min-year-2017.pickle,
+        /data/persona_recs/persona_recs.pickle,
+        /data/terms_to_s2_id/terms_to_s2_id_scoreThreshold0.90.parquet,
+        /output,
+        --debug
+      ]
+    datasets:
+      - mountPath: /data/terms_to_s2_id
+        source:
+          beaker: jasonp/terms_to_s2_id
+      - mountPath: /data/personas
+        source:
+          beaker: 01H3GEF8H3QQZ97QHKDJYZ00W8  # personas for 2017
+      - mountPath: /data/persona_recs
+        source:
+          beaker: jasonp/persona_recs_min-year-2017
+    result:
+      # Beaker will capture anything that's written to this location and store it in the results
+      # dataset.
+      path: /output
+    resources:
+      # cpuCount: 16
+      memory: 25 GiB
+    context:
+      cluster: ai2/s2-elanding
+      priority: normal
+
+
+

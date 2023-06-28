@@ -1,0 +1,34 @@
+version: v2
+description: PL-marker update papers TEST3.0
+tasks:
+  - name: pl-marker-update-papers
+    image:
+      beaker: jasonp/pl-marker-ner2
+    command:
+      [
+        python,
+        -u,
+        update_papers_script.py,
+        --batch=1
+      ]
+    datasets:
+      - mountPath: /scierc
+        source:
+          # UPDATE THIS to point to the output of update script00
+          beaker: 01H3SG2KH95MANRW7ECQP3VM9Y  # result of script00 (1st step of update script)
+      - mountPath: /models/sciner-scibert/
+        source:
+          beaker: jasonp/sciner-scibert-model
+    result:
+      # Beaker will capture anything that's written to this location and store it in the results
+      # dataset.
+      path: /output
+    resources:
+      gpuCount: 1
+      # memory: 128 GiB
+      memory: 300 GiB
+    context:
+      # cluster: ai2/s2-elanding
+      cluster: ai2/s2-cirrascale
+      priority: high
+

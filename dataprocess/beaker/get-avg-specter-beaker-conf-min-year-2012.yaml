@@ -1,0 +1,44 @@
+version: v2
+description: Get average specter embeddings for authors (min-year 2012)
+tasks:
+  - name: get-avg-specter-min-year-2012
+    image:
+      beaker: jasonp/bridger_dataprocess
+    command:
+      [
+        python,
+        -u,
+        scripts/get_author_avg_specter.py,
+        /data/specter/specter_embeddings.npy,
+        /data/corpus_ids/specter_embeddings_corpus_ids.npy,
+        /data/paper_authors/computer_science_paper_authors.parquet,
+        /output/avg_specter,
+        --min-papers,
+        5,
+        --min-year,
+        2012,
+        --debug
+      ]
+    datasets:
+      - mountPath: /data/specter
+        source:
+          beaker: 01GT840HVXKA1PRNH0RZZNPKTP
+      - mountPath: /data/corpus_ids
+        source:
+          beaker: 01GTT00FCPZBEMEY7X8X53ZAED
+      - mountPath: /data/paper_authors
+        source:
+          beaker: 01GGQHT6K90QDD00KHZXG454DY
+    result:
+      # Beaker will capture anything that's written to this location and store it in the results
+      # dataset.
+      path: /output
+    resources:
+      # cpuCount: 16
+      memory: 300 GiB
+    context:
+      cluster: ai2/s2-elanding
+      priority: normal
+
+
+

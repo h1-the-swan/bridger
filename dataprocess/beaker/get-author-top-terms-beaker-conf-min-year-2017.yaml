@@ -1,0 +1,31 @@
+version: v2
+description: Get top terms (tasks and methods) for all authors (min year 2017)
+tasks:
+  - name: get-author-top-terms-min-year-2017
+    image:
+      beaker: jasonp/bridger_dataprocess
+    command:
+      [
+        python,
+        -u,
+        scripts/get_author_top_terms.py,
+        /output,
+        --debug
+      ]
+    datasets:
+      - mountPath: /data/bridger_embeddings
+        source:
+          beaker: jasonp/avg_embeddings_min_year_2017
+    result:
+      # Beaker will capture anything that's written to this location and store it in the results
+      # dataset.
+      path: /output
+    resources:
+      # cpuCount: 16
+      memory: 50 GiB
+    context:
+      cluster: ai2/s2-elanding
+      priority: normal
+
+
+

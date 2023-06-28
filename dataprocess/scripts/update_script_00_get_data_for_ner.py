@@ -6,7 +6,7 @@ import sys, os, time
 import json
 import gzip
 import shutil
-from typing import List, Union
+from typing import List, Union, Set
 from pathlib import Path
 from datetime import datetime
 from timeit import default_timer as timer
@@ -51,12 +51,20 @@ def identify_papers_to_update(papers_file: Path) -> List:
     return update_papers
 
 
-def get_ignore_ids(path_to_df: Union[Path, str]) -> List[int]:
+def get_ignore_ids(path_to_df: Union[Path, str]) -> Set[int]:
+    logger.debug(f"getting paper IDs to ignore from file: {path_to_df}")
     df = pd.read_parquet(path_to_df)
-    ignore_ids = df["s2_id"].dropna().drop_duplicates().tolist()
-    ignore_ids = set(ignore_ids)  # better to convert this to set. much faster
-    logger.debug(f"found {len(ignore_ids)} paper IDs to ignore")
-    return ignore_ids
+    for column_name in ["s2_id", "PaperId"]:
+        try:
+            ignore_ids = df[column_name].dropna().drop_duplicates().tolist()
+            ignore_ids = set(ignore_ids)  # better to convert this to set. much faster
+            logger.debug(f"found {len(ignore_ids)} paper IDs to ignore")
+            return ignore_ids
+        except KeyError:
+            logger.warning(f"could not find paper IDs using column name: {column_name}")
+    logger.error("failed to find any paper IDs to ignore. returning empty set")
+    return set()
+        
 
 
 def main(args):
@@ -75,7 +83,7 @@ def main(args):
     formatted_titles_abstracts_file = outdir.joinpath(
         "titles_abstracts_update_plmarker_scierc.json"
     )
-    run_format_data_for_ner(abstracts_file, formatted_titles_abstracts_file)
+    run_format_data_for_ner(abstracts_file, formatted_titles_abstracts_file, chunksize=100000)
     paperauthors_file = outdir.joinpath("computer_science_paper_authors_update.parquet")
     run_get_PaperAuthors_table(papers_file, paperauthors_file)
     logger.debug(f"deleting directory: {bulk_download_dir}")
@@ -101,7 +109,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=DESCRIPTION)
     parser.add_argument("outdir", help="output base directory")
     parser.add_argument(
-        "--existing", help='path to file (parquet): dataframe with column "s2_id"'
+        "--existing", help='path to file (parquet): dataframe with column "s2_id" or "PaperId"'
     )
     parser.add_argument("--debug", action="store_true", help="output debugging info")
     global args

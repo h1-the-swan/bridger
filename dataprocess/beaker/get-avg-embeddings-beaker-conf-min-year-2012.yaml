@@ -1,0 +1,42 @@
+version: v2
+description: Get average embeddings for authors (min-year 2012)
+tasks:
+  - name: get-avg-embeddings-min-year-2012
+    image:
+      beaker: jasonp/bridger_dataprocess
+    command:
+      [
+        python,
+        -u,
+        scripts/get_author_avg_embeddings.py,
+        /data/final-processing-embeddings/embeddings.npy,
+        /data/final-processing-embeddings/embedding_term_to_id.parquet,
+        /data/final-processing-embeddings/dygie_embedding_term_ids_to_s2_id_scoreThreshold0.90.parquet,
+        /data/paper_authors/computer_science_paper_authors.parquet,
+        /output/avg_embeddings,
+        --min-papers,
+        5,
+        --min-year,
+        2012,
+        --debug
+      ]
+    datasets:
+      - mountPath: /data/final-processing-embeddings
+        source:
+          beaker: 01GGQFE7F8Q503YX004KRXQRGK
+      - mountPath: /data/paper_authors
+        source:
+          beaker: 01GGQHT6K90QDD00KHZXG454DY
+    result:
+      # Beaker will capture anything that's written to this location and store it in the results
+      # dataset.
+      path: /output
+    resources:
+      # cpuCount: 16
+      memory: 300 GiB
+    context:
+      cluster: ai2/s2-elanding
+      priority: normal
+
+
+

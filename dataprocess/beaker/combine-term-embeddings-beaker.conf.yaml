@@ -1,0 +1,32 @@
+version: v2
+description: Combine sentence transformer embeddings for NER terms
+tasks:
+  - name: combine-term-embeddings
+    image:
+      beaker: jasonp/bridger_dataprocess
+    command:
+      [
+        python,
+        -u,
+        scripts/combine_embeddings.py,
+        /data,
+        --outdir,
+        /output,
+        --debug
+      ]
+    datasets:
+      - mountPath: /data
+        source:
+          beaker: 01GFVMBWPWJR5YT15VG9DRDYKB
+    result:
+      # Beaker will capture anything that's written to this location and store it in the results
+      # dataset.
+      path: /output
+    resources:
+      cpuCount: 20
+      memory: 250 GiB
+    context:
+      cluster: ai2/s2-elanding
+      priority: normal
+
+

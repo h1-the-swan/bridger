@@ -1,0 +1,36 @@
+version: v2
+description: Run script to combine old and new paper-authors table (one-off)
+tasks:
+  - name: run-merge-old-and-new-paper-authors
+    image:
+      beaker: jasonp/bridger_dataprocess
+    command:
+      [
+        python3,
+        -u,
+        scripts/merge_old_and_new_paper_authors.py,
+        /output,
+        --paper-authors,
+        /data/paper_authors/computer_science_paper_authors_update.parquet,
+        --existing-paper-authors,
+        /data/paper_authors_existing/computer_science_paper_authors.parquet,
+        --debug
+      ]
+    datasets:
+      - mountPath: /data/paper_authors
+        source:
+          beaker: 01H1QVHRDZ3SDTGM8B27NJSD3T
+      - mountPath: /data/paper_authors_existing
+        source:
+          beaker: 01GGQHT6K90QDD00KHZXG454DY
+    result:
+      # Beaker will capture anything that's written to this location and store it in the results
+      # dataset.
+      path: /output
+    resources:
+      # cpuCount: 16
+      memory: 128 GiB
+      gpuCount: 1
+    context:
+      cluster: ai2/s2-cirrascale
+      priority: normal

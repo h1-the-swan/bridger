@@ -90,6 +90,11 @@ Paper to term data is in `final-processing-terms/terms_to_s2_id_scoreThreshold0.
 TODOs 2023-02-20:
 - I changed `get_author_avg_embeddings.py` to exclude papers before `min-year`, so need to rerun that for 2012 and 2017.
 - I added `get_avg_specter` to `average_embeddings.py`. Need to write a script to run that for a given `min-year`, and run it for 2012 and 2017. See `Untitled10.ipynb`.
+  - See new script: `get_author_avg_specter.py`
+  - See new conf files: `get-avg-specter-beaker-conf-min-year-2017.yaml` (and other one for 2012)
 - Modify `dataprocess/beaker/submit_beaker_experiments_get_dists.py` and use it to get distances for all authors (for min-year 2012 and 2017).
 - Combine distance data to get author recs. See `beaker_experiments_after_get_recs_run00.ipynb`.
+  - See new script: `combine_author_recs.py` 
 - At some point in the above steps, or after them (try to figure out the best time to do it), get top terms (tasks and methods) for authors. see `matrices_author_paper_term.ipynb`.
+
+clusterer for personas is in jp_collabnetworks `user_study.py`
